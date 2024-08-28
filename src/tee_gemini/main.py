@@ -45,7 +45,8 @@ async def fetch_and_process_events(
                 if not {"user", "feedIndex", "target", "payload"} <= log["args"].keys():
                     logger.warning("Event log does not contain valid args")
                     continue
-                response = gemini_api.make_query(log["payload"])
+                response = gemini_api.make_query(log["args"]["payload"])
+                logger.info(response)
                 try:
                     await gemini_endpoint.respond_to_query(response)
                 except ContractLogicError:

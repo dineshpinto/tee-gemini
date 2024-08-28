@@ -11,13 +11,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RequestResponse:
-    feed_index: int
-    feed_value: int
-    decimal: int
-    timestamp: int
-    requester: str
-    target: str
-    payload: str
+    text: str
+    prompt_token_count: int
+    candidates_token_count: int
+    total_token_count: int
 
 
 class GeminiEndpoint(RpcAPI):
@@ -49,13 +46,10 @@ class GeminiEndpoint(RpcAPI):
 
     async def respond_to_query(self, response: RequestResponse) -> None:
         tx = await self.gemini_endpoint.functions.receiveFeed(
-            response.feed_index,
-            response.feed_value,
-            response.decimal,
-            response.timestamp,
-            response.requester,
-            response.target,
-            response.payload,
+            response.text,
+            response.prompt_token_count,
+            response.candidates_token_count,
+            response.total_token_count,
         ).build_transaction(
             {
                 "from": self.tee_address,
