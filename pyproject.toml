@@ -17,6 +17,7 @@ build-backend = "hatchling.build"
 [tool.uv]
 dev-dependencies = [
     "ruff>=0.6.2",
+    "pyright>=1.1.377",
 ]
 
 [tool.ruff]
@@ -31,3 +32,34 @@ docstring-code-format = true
 
 [project.scripts]
 start-gemini = "tee_gemini.main:start"
+
+[tool.pyright]
+include=["src/"]
+pythonVersion = "3.12"
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+deprecateTypingAliases = true
+disableBytesTypePromotions = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUntypedFunctionDecorator = true
+reportUntypedClassDecorator = true
+reportPrivateUsage = true
+reportTypeCommentUsage = true
+reportConstantRedefinition = true
+reportDeprecated = true
+reportInconsistentConstructor = true
+reportUninitializedInstanceVariable = true
+reportMissingParameterType = true
+reportCallInDefaultInitializer = true
+reportUnnecessaryIsInstance = true
+reportUnnecessaryCast = true
+reportUnnecessaryComparison = true
+reportUnnecessaryContains = true
+reportInvalidStubStatement = true
+reportUnusedExpression = true
+reportUnnecessaryTypeIgnoreComment = true
+reportMatchNotExhaustive = true
+reportImplicitOverride = true
+reportShadowedImports = true
