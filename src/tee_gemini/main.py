@@ -1,0 +1,103 @@
+import asyncio
+import logging
+
+from web3.exceptions import ContractLogicError
+
+from tee_gemini.config import (
+    GEMINI_ENDPOINT_ABI,
+    GEMINI_ENDPOINT_ADDRESS,
+    RPC_URL,
+    SECONDS_BW_ITERATIONS,
+    TEE_ADDRESS,
+    TEE_PRIVATE_KEY,
+)
+from tee_gemini.gemini_api import GeminiAPI
+from tee_gemini.gemini_endpoint import GeminiEndpoint
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+async def fetch_and_process_events(
+    gemini_api: GeminiAPI,
+    gemini_endpoint: GeminiEndpoint,
+    latest_block_num: int,
+) -> int:
+    """Poll event emitting contract and get latest feed values."""
+    new_block_num = await gemini_endpoint.get_latest_block_number()
+
+    if new_block_num > latest_block_num:
+        logger.debug(
+            "Polling Gemini Endpoint for `MessageRequested` from %i to %i",
+            latest_block_num,
+            new_block_num,
+        )
+        logs = await gemini_endpoint.get_event_logs(
+            from_block=latest_block_num,
+            to_block=new_block_num,
+            event_name="MessageRequested",
+        )
+        if logs:
+            logger.debug("Found logs, querying Gemini API")
+
+            for log in logs:
+                if not {"user", "feedIndex", "target", "payload"} <= log["args"].keys():
+                    logger.warning("Event log does not contain valid args")
+                    continue
+                response = gemini_api.make_query(log["payload"])
+                try:
+                    await gemini_endpoint.respond_to_query(response)
+                except ContractLogicError:
+                    logger.exception("Error responding to query")
+                    continue
+        else:
+            logger.debug("No `MessageRequested` logs found")
+
+        return new_block_num
+
+    return latest_block_num
+
+
+async def query_gemini_api() -> None:
+    pass
+
+
+async def async_loop() -> None:
+    # Connect to Gemini Endpoint contract
+    gemini_endpoint = GeminiEndpoint(
+        RPC_URL,
+        GEMINI_ENDPOINT_ADDRESS,
+        GEMINI_ENDPOINT_ABI,
+        TEE_ADDRESS,
+        TEE_PRIVATE_KEY,
+    )
+    await gemini_endpoint.check_connection()
+
+    # Connect to Gemini API
+    gemini_api = GeminiAPI()
+
+    logger.info("Waiting for requests...")
+    latest_block_num = await gemini_endpoint.get_latest_block_number()
+    while True:
+        try:
+            latest_block_num = await fetch_and_process_events(
+                gemini_api, gemini_endpoint, latest_block_num
+            )
+        except Exception:
+            logger.exception("Error during event processing")
+            latest_block_num = await gemini_endpoint.get_latest_block_number()
+            continue
+
+        await asyncio.sleep(SECONDS_BW_ITERATIONS)
+
+
+def start() -> None:
+    try:
+        asyncio.run(async_loop())
+    except KeyboardInterrupt:
+        logger.info("Process interrupted by user")
+
+
+if __name__ == "__main__":
+    start()
