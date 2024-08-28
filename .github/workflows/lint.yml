@@ -14,12 +14,12 @@ jobs:
       - name: Set up uv
         uses: eifinger/setup-uv@v1
         with:
-          version: '0.3.5'
+          version: "0.3.5"
       - name: Install dependencies
         run: uv sync --frozen --all-extras
       - name: Format with ruff
-        run: ruff format --diff
+        run: uv run ruff format --diff
       - name: Lint with riff
-        run: ruff check --diff
+        run: uv run ruff check --diff
       - name: Type check with pyright
-        run: pyright
+        run: uv run pyright
