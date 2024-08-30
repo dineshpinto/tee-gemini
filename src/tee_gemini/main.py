@@ -29,23 +29,23 @@ async def fetch_and_process_events(
 
     if new_block_num > latest_block_num:
         logger.debug(
-            "Polling Gemini Endpoint for `MessageRequested` from %i to %i",
+            "Polling Gemini Endpoint for `RequestSubmitted` from %i to %i",
             latest_block_num,
             new_block_num,
         )
         logs = await gemini_endpoint.get_event_logs(
             from_block=latest_block_num,
             to_block=new_block_num,
-            event_name="MessageRequested",
+            event_name="RequestSubmitted",
         )
         if logs:
             logger.debug("Found logs, querying Gemini API")
 
             for log in logs:
-                if not {"user", "feedIndex", "target", "payload"} <= log["args"].keys():
+                if not {"uid", "sender", "data"} <= log["args"].keys():
                     logger.warning("Event log does not contain valid args")
                     continue
-                response = gemini_api.make_query(log["args"]["payload"])
+                response = gemini_api.make_query(log["args"]["data"])
                 logger.info(response)
                 try:
                     await gemini_endpoint.respond_to_query(response)

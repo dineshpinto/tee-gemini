@@ -18,13 +18,13 @@ def load_env_var(var_name: str) -> str:
 
 # Contracts
 GEMINI_ENDPOINT_ADDRESS = load_env_var("GEMINI_ENDPOINT_ADDRESS")
-CURRENT_FOLDER = Path(__file__).resolve().parent
-with (CURRENT_FOLDER / "abi" / "GeminiEndpoint.abi").open() as f:
+ROOT_FOLDER = Path(__file__).resolve().parent.parent
+with (ROOT_FOLDER / "contracts" / "output" / "Interactor.abi").open() as f:
     GEMINI_ENDPOINT_ABI = json.load(f)
 
 # Network
 RPC_URL = load_env_var("RPC_URL")
-SECONDS_BW_ITERATIONS = 3.0
+SECONDS_BW_ITERATIONS = float(load_env_var("SECONDS_BW_ITERATIONS"))
 
 # TEE
 TEE_ADDRESS = load_env_var("TEE_ADDRESS")
