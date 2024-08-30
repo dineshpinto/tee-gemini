@@ -75,4 +75,8 @@ contract Interactor {
         }
         return result;
     }
+    
+    function getLatestResponse() public view returns (Response memory) {
+        return responses[requests.length];
+    }
 }
