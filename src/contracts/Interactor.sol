@@ -12,7 +12,7 @@ contract Interactor {
     struct Response {
         uint256 uid; // Response uid
         string text;
-        uint256 promtTokenCount;
+        uint256 promptTokenCount;
         uint256 candidateTokenCount;
         uint256 totalTokenCount;
     }
@@ -21,7 +21,7 @@ contract Interactor {
     event RequestFullfilled(
         uint256 uid,
         string text,
-        uint256 promtTokenCount,
+        uint256 promptTokenCount,
         uint256 candidateTokenCount,
         uint256 totalTokenCount
     );
@@ -50,7 +50,7 @@ contract Interactor {
         emit RequestFullfilled(
             _uid,
             _response.text,
-            _response.promtTokenCount,
+            _response.promptTokenCount,
             _response.candidateTokenCount,
             _response.totalTokenCount
         );
