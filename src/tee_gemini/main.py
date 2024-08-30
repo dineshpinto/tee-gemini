@@ -27,15 +27,15 @@ async def fetch_and_process_events(
     """Poll event emitting contract and get latest feed values."""
     new_block_num = await gemini_endpoint.get_latest_block_number()
 
-    if new_block_num > latest_block_num:
-        logger.debug(
+    if new_block_num > latest_block_num + 1:
+        logger.info(
             "Polling Gemini Endpoint for `RequestSubmitted` from %i to %i",
             latest_block_num,
-            new_block_num,
+            new_block_num - 1,
         )
         logs = await gemini_endpoint.get_event_logs(
             from_block=latest_block_num,
-            to_block=new_block_num,
+            to_block=new_block_num - 1,
             event_name="RequestSubmitted",
         )
         if logs:
@@ -46,6 +46,7 @@ async def fetch_and_process_events(
                     logger.warning("Event log does not contain valid args")
                     continue
                 uid, data = log["args"]["uid"], log["args"]["data"]
+                logger.info("New request uid=%d, data=%s", uid, data)
                 response = gemini_api.make_query(uid=uid, data=data)
                 logger.info(response)
                 try:
