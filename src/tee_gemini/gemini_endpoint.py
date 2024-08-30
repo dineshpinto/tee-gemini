@@ -48,10 +48,13 @@ class GeminiEndpoint(RpcAPI):
     async def respond_to_query(self, response: RequestResponse) -> None:
         tx = await self.gemini_endpoint.functions.fulfillRequest(
             response.uid,
-            response.text,
-            response.prompt_token_count,
-            response.candidates_token_count,
-            response.total_token_count,
+            (
+                response.uid,
+                response.text,
+                response.prompt_token_count,
+                response.candidates_token_count,
+                response.total_token_count,
+            ),
         ).build_transaction(
             {
                 "from": self.tee_address,
@@ -63,6 +66,6 @@ class GeminiEndpoint(RpcAPI):
         signed_tx = self.w3.eth.account.sign_transaction(
             tx, private_key=self.tee_private_key
         )
-        tx_hash = await self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_hash = await self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
         tx_receipt = await self.w3.eth.wait_for_transaction_receipt(tx_hash)
         logger.debug("Tx Receipt: %s", tx_receipt)
