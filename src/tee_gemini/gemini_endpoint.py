@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RequestResponse:
+    uid: int
     text: str
     prompt_token_count: int
     candidates_token_count: int
@@ -45,7 +46,8 @@ class GeminiEndpoint(RpcAPI):
         )
 
     async def respond_to_query(self, response: RequestResponse) -> None:
-        tx = await self.gemini_endpoint.functions.receiveFeed(
+        tx = await self.gemini_endpoint.functions.fulfillRequest(
+            response.uid,
             response.text,
             response.prompt_token_count,
             response.candidates_token_count,

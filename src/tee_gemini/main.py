@@ -45,7 +45,8 @@ async def fetch_and_process_events(
                 if not {"uid", "sender", "data"} <= log["args"].keys():
                     logger.warning("Event log does not contain valid args")
                     continue
-                response = gemini_api.make_query(log["args"]["data"])
+                uid, data = log["args"]["uid"], log["args"]["data"]
+                response = gemini_api.make_query(uid=uid, data=data)
                 logger.info(response)
                 try:
                     await gemini_endpoint.respond_to_query(response)
