@@ -29,3 +29,4 @@ SECONDS_BW_ITERATIONS = float(load_env_var("SECONDS_BW_ITERATIONS"))
 # TEE
 TEE_ADDRESS = load_env_var("TEE_ADDRESS")
 TEE_PRIVATE_KEY = load_env_var("TEE_PRIVATE_KEY")
+GEMINI_API_KEY = load_env_var("GEMINI_API_KEY")
