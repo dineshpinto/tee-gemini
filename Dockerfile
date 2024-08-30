@@ -10,4 +10,4 @@ ADD . /tee-gemini
 WORKDIR /tee-gemini
 RUN uv sync --frozen
 
-CMD ["uv", "run", "start-gemini"]
+ENTRYPOINT ["uv", "run", "start-gemini"]
