@@ -78,7 +78,7 @@ async def async_loop() -> None:
     await gemini_endpoint.check_connection()
 
     # Connect to Gemini API
-    gemini_api = GeminiAPI()
+    gemini_api = GeminiAPI(model="gemini-1.5-flash-001")
 
     logger.info("Waiting for requests...")
     latest_block_num = await gemini_endpoint.get_latest_block_number()

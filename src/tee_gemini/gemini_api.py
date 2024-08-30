@@ -1,14 +1,19 @@
+import logging
+
 import vertexai
 from vertexai.generative_models import GenerativeModel
 
 from tee_gemini.gemini_endpoint import RequestResponse
 
+logger = logging.getLogger(__name__)
+
 vertexai.init(project="flare-network-sandbox", location="europe-west1")
 
 
 class GeminiAPI:
-    def __init__(self) -> None:
-        self.model = GenerativeModel("gemini-1.5-pro-001")
+    def __init__(self, model: str) -> None:
+        self.model = GenerativeModel(model)
+        logger.info("Successfully connected to VertexAI API with model `%s`", model)
 
     def make_query(self, uid: int, data: str) -> RequestResponse:
         res = self.model.generate_content(data)
