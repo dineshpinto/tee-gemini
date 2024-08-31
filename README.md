@@ -39,3 +39,23 @@ docker run --name tee-gemini tee-gemini
     - Advanced Options -> Security -> Shielded VM: Check Turn on Secure Boot
 
 3. Click on create
+
+## Retrieving Endorsement Keys (EKPub)
+
+You can retrieve the endorsement key for both the encryption key and the signing key. You can use the encryption key to encrypt data so that only the vTPM can read it, or the signing key to verify signatures that the vTPM makes. You can also use the key to ascertain the identity of a VM instance before sending sensitive information to it.
+
+```bash
+gcloud compute instances get-shielded-identity tee-gemini --zone us-central1-a
+```
+
+### Inspect the TEE encryption and signing keys
+
+```bash
+gcloud compute instances get-shielded-identity tee-gemini --zone us-central1-a --format=json | jq -r '.encryptionKey.ekCert' > ekcert.pem
+openssl x509 -in ekcert.pem -text -noout
+```
+
+```bash
+gcloud compute instances get-shielded-identity tee-gemini --zone us-central1-a --format=json | jq -r '.signingKey.ekCert' > akcert.pem
+openssl x509 -in akcert.pem -text -noout
+```
