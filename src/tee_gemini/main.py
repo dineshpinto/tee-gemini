@@ -103,7 +103,7 @@ def start() -> None:
     if IN_TEE:
         logger.info("In TEE, fetching TEE PubKey...")
         tee_pubkey = subprocess.run(
-            ["./gotpm", "pubkey"],
+            ["./gotpm", "--help"],
             capture_output=True,
             check=True,
             text=True,
