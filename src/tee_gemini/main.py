@@ -102,8 +102,15 @@ def start() -> None:
     # Verify TEE
     if IN_TEE:
         logger.info("In TEE, fetching TEE PubKey...")
-        tee_pubkey = subprocess.run(
+        subprocess.run(
             ["./gotpm", "--help"],
+            capture_output=True,
+            check=True,
+            text=True,
+        )
+
+        tee_pubkey = subprocess.run(
+            ["sudo", "./gotpm", "pubkey"],
             capture_output=True,
             check=True,
             text=True,
