@@ -8,11 +8,11 @@ from tee_gemini.config import (
     GEMINI_API_KEY,
     GEMINI_ENDPOINT_ABI,
     GEMINI_ENDPOINT_ADDRESS,
+    IN_TEE,
     RPC_URL,
     SECONDS_BW_ITERATIONS,
     TEE_ADDRESS,
     TEE_PRIVATE_KEY,
-    IN_TEE
 )
 from tee_gemini.gemini_api import GeminiAPI
 from tee_gemini.gemini_endpoint import GeminiEndpoint

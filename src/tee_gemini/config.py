@@ -30,4 +30,4 @@ SECONDS_BW_ITERATIONS = float(load_env_var("SECONDS_BW_ITERATIONS"))
 TEE_ADDRESS = load_env_var("TEE_ADDRESS")
 TEE_PRIVATE_KEY = load_env_var("TEE_PRIVATE_KEY")
 GEMINI_API_KEY = load_env_var("GEMINI_API_KEY")
-IN_TEE = True if load_env_var("IN_TEE") == "true" else False
+IN_TEE = load_env_var("IN_TEE") == "true"
