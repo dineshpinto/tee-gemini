@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import subprocess
 
 from web3.exceptions import ContractLogicError
 
@@ -11,6 +12,7 @@ from tee_gemini.config import (
     SECONDS_BW_ITERATIONS,
     TEE_ADDRESS,
     TEE_PRIVATE_KEY,
+    IN_TEE
 )
 from tee_gemini.gemini_api import GeminiAPI
 from tee_gemini.gemini_endpoint import GeminiEndpoint
@@ -97,6 +99,19 @@ async def async_loop() -> None:
 
 
 def start() -> None:
+    # Verify TEE
+    if IN_TEE:
+        logger.info("In TEE, fetching TEE PubKey...")
+        tee_pubkey = subprocess.run(
+            ["./gotpm", "pubkey"],
+            capture_output=True,
+            check=True,
+            text=True,
+        )
+        logger.info("TEE PubKey %s", tee_pubkey.stdout)
+    else:
+        logger.info("Not in TEE")
+
     try:
         asyncio.run(async_loop())
     except KeyboardInterrupt:
