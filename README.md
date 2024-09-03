@@ -42,6 +42,8 @@ docker run --name tee-gemini tee-gemini
 
 ## Retrieving Endorsement Keys (EKPub)
 
+Install the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
+
 You can retrieve the endorsement key for both the encryption key and the signing key. You can use the encryption key to encrypt data so that only the vTPM can read it, or the signing key to verify signatures that the vTPM makes. You can also use the key to ascertain the identity of a VM instance before sending sensitive information to it.
 
 ```bash
