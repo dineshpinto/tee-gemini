@@ -116,6 +116,7 @@ def start() -> None:
             check=True,
             text=True,
         )
+        logger.info("%s", endorsement_pubkey_output)
         endorsement_pubkey = endorsement_pubkey_output.stdout
         logger.info("TEE Endorsement PubKey %s", endorsement_pubkey)
     else:
