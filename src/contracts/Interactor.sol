@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: MIT
-
+// Import ownable from OpenZeppelin
+import "@openzeppelin/contracts/access/Ownable.sol";
 pragma solidity ^0.8.6;
 
-contract Interactor {
+contract Interactor is Ownable {
+    struct OIDCRequest {
+        address sender;
+        uint256 uid;
+        string data;
+    }
+
     struct Request {
         address sender;
         uint256 uid;
@@ -17,6 +24,9 @@ contract Interactor {
         uint256 totalTokenCount;
     }
 
+    event OIDCRequestSubmitted(uint256 uid, address sender);
+    event OIDCRequestFullfilled(uint256 uid, string data);
+
     event RequestSubmitted(uint256 uid, address sender, string data);
     event RequestFullfilled(
         uint256 uid,
@@ -27,7 +37,39 @@ contract Interactor {
     );
 
     Request[] public requests;
+    OIDCRequest[] public oidcRequests;
     mapping(uint256 => Response) public responses;
+    bytes32 public ekPublicKey;
+
+    constructor(bytes32 _ekPublicKey) Ownable() {
+        ekPublicKey = _ekPublicKey;
+    }
+
+    function getEkAddress() external view returns (address) {
+        return address(bytes20(keccak256(abi.encode(ekPublicKey))));
+    }
+
+    function setEkPublicKey(bytes32 _ekPublicKey) external onlyOwner {
+        ekPublicKey = _ekPublicKey;
+    }
+
+    function requestOIDCToken() external returns (uint256) {
+        uint256 uid = oidcRequests.length + 1;
+        OIDCRequest memory req = OIDCRequest({
+            sender: msg.sender,
+            uid: uid,
+            data: ""
+        });
+        oidcRequests.push(req);
+        emit OIDCRequestSubmitted(uid, msg.sender);
+        return uid;
+    }
+
+    function fulfillOIDCToken(uint256 _uid, string memory _data) external {
+        // This would be limited to the address of eligible fulfillers
+
+        emit OIDCRequestFullfilled(_uid, _data);
+    }
 
     function makeRequest(string memory _data) external {
         uint256 uid = requests.length + 1;
@@ -78,5 +120,17 @@ contract Interactor {
 
     function getLatestResponse() public view returns (Response memory) {
         return responses[requests.length];
+    }
+
+    function getOIDCRequestsCount() external view returns (uint256) {
+        return oidcRequests.length;
+    }
+
+    function getOIDCRequests() external view returns (OIDCRequest[] memory) {
+        OIDCRequest[] memory result = new OIDCRequest[](oidcRequests.length);
+        for (uint256 i = 0; i < oidcRequests.length; i++) {
+            result[i] = oidcRequests[i];
+        }
+        return result;
     }
 }
