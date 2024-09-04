@@ -109,13 +109,14 @@ def start() -> None:
             text=True,
         )
 
-        tee_pubkey = subprocess.run(
-            ["sudo", "./gotpm", "pubkey"],
+        endorsement_pubkey = subprocess.run(
+            ["sudo", "./gotpm", "pubkey", "endorsement"],
             capture_output=True,
             check=True,
             text=True,
         )
-        logger.info("TEE PubKey %s", tee_pubkey.stdout)
+        endorsement_pubkey = endorsement_pubkey.stdout
+        logger.info("TEE Endorsement PubKey %s", endorsement_pubkey)
     else:
         logger.info("Not in TEE")
 
