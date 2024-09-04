@@ -8,7 +8,6 @@ from tee_gemini.config import (
     GEMINI_API_KEY,
     GEMINI_ENDPOINT_ABI,
     GEMINI_ENDPOINT_ADDRESS,
-    IN_TEE,
     RPC_URL,
     SECONDS_BW_ITERATIONS,
     TEE_ADDRESS,
@@ -99,34 +98,27 @@ async def async_loop() -> None:
 
 
 def start() -> None:
-    # Verify TEE
-    if IN_TEE:
-        logger.info("In TEE, fetching TEE PubKey...")
-        gotpm_help_output = subprocess.run(
-            ["./gotpm", "--help"],
+    logger.info("Checking for gotpm binary...")
+    try:
+        subprocess.run(
+            ["./gotpm --help"], capture_output=True, check=True, text=True, shell=True
+        )
+        logger.info("Successfully queried gotpm binary")
+    except subprocess.CalledProcessError:
+        logger.exception("Unable to query gotpm binary")
+
+    try:
+        endorsement_pubkey_output = subprocess.run(
+            ["./gotpm pubkey endorsement"],
             capture_output=True,
             check=True,
             text=True,
+            shell=True,
         )
-        logger.info("%s", gotpm_help_output.stdout)
-
-        try:
-            endorsement_pubkey_output = subprocess.run(
-                ["./gotpm", "pubkey", "endorsement"],
-                capture_output=True,
-                check=True,
-                text=True,
-                shell=True,
-            )
-        except subprocess.CalledProcessError as e:
-            logger.exception("Unable to query pubkey")
-            logger.exception("%s", e.returncode)
-            logger.exception("%s", e.output)
-
-        endorsement_pubkey = endorsement_pubkey_output.stdout
-        logger.info("TEE Endorsement PubKey %s", endorsement_pubkey)
-    else:
-        logger.info("Not in TEE")
+        logger.info("stdout %s", endorsement_pubkey_output.stdout)
+        logger.info("stderr %s", endorsement_pubkey_output.stderr)
+    except subprocess.CalledProcessError:
+        logger.exception("Unable to query TEE pubkey")
 
     try:
         asyncio.run(async_loop())
