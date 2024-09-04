@@ -111,7 +111,7 @@ def start() -> None:
         logger.info("%s", gotpm_help_output.stdout)
 
         endorsement_pubkey_output = subprocess.run(
-            ["sudo", "./gotpm", "pubkey", "endorsement"],
+            ["./gotpm", "pubkey", "endorsement"],
             capture_output=True,
             check=True,
             text=True,
