@@ -26,7 +26,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D", "COM812", "ISC001", "S311", "S603", "S607"]
+ignore = ["D", "COM812", "ISC001", "S311", "S603", "S607", "S602"]
 
 [tool.ruff.format]
 docstring-code-format = true

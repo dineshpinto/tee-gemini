@@ -110,13 +110,19 @@ def start() -> None:
         )
         logger.info("%s", gotpm_help_output.stdout)
 
-        endorsement_pubkey_output = subprocess.run(
-            ["./gotpm", "pubkey", "endorsement"],
-            capture_output=True,
-            check=True,
-            text=True,
-        )
-        logger.info("Error: %s", endorsement_pubkey_output.stderr)
+        try:
+            endorsement_pubkey_output = subprocess.run(
+                ["./gotpm", "pubkey", "endorsement"],
+                capture_output=True,
+                check=True,
+                text=True,
+                shell=True,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.exception("Unable to query pubkey")
+            logger.exception("%s", e.returncode)
+            logger.exception("%s", e.output)
+
         endorsement_pubkey = endorsement_pubkey_output.stdout
         logger.info("TEE Endorsement PubKey %s", endorsement_pubkey)
     else:
