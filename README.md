@@ -34,6 +34,7 @@ docker run --name tee-gemini tee-gemini
    - Machine Configuration -> Compute Optimized: C2D
    - Confidential VM Service: Enable
    - Deploy Container -> Container Image: `ghcr.io/dineshpinto/tee-gemini:main`
+   - Run as privileged: Check
    - Environment Variables -> All environment variables defined in your `.env`
    - Boot Disk -> Change -> Confidential Images: Container-Optimized-OS 113-18224.151.27 LTS
    - Advanced Options -> Security -> Shielded VM: Check Turn on Secure Boot
