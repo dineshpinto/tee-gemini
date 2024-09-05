@@ -11,4 +11,4 @@ WORKDIR /tee-gemini
 RUN uv sync --frozen
 RUN chmod +x entrypoint.sh
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["uv", "run", "start-gemini"]
