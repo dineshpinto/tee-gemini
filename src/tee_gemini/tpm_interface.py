@@ -15,7 +15,7 @@ class TPMInterface:
         pass
 
     async def _communicate(self, command: str) -> str:
-        command = "./gotpm " + command
+        command = "gotpm " + command
         process = await asyncio.create_subprocess_shell(
             command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
