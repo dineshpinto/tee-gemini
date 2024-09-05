@@ -52,6 +52,7 @@ class GeminiEndpoint(RpcAPI):
         )
 
     async def sign_and_send_transaction(self, tx: TxParams) -> TxReceipt:
+        """Sign and send a transaction, then wait for receipt."""
         signed_tx = self.w3.eth.account.sign_transaction(
             tx, private_key=self.tee_private_key
         )
@@ -61,6 +62,7 @@ class GeminiEndpoint(RpcAPI):
         return tx_receipt
 
     async def fulfill_gemini_request(self, response: GeminiResponse) -> None:
+        """Fulfills a Gemini request by sending a transaction to the contract."""
         tx = await self.contract.functions.fulfillRequest(
             response.uid,
             (
@@ -81,6 +83,7 @@ class GeminiEndpoint(RpcAPI):
         await self.sign_and_send_transaction(tx)
 
     async def fulfill_oidc_request(self, response: OIDCResponse) -> None:
+        """Fulfills an OIDC request by sending a transaction to the contract."""
         tx = await self.contract.functions.fulfillOIDCToken(
             response.uid,
             response.token,
@@ -95,6 +98,7 @@ class GeminiEndpoint(RpcAPI):
         await self.sign_and_send_transaction(tx)
 
     async def set_ek_pubkey(self, pubkey: str) -> None:
+        """Sets the EK public key on the contract."""
         tx = await self.contract.functions.setEkPublicKey(
             pubkey.encode(),
         ).build_transaction(

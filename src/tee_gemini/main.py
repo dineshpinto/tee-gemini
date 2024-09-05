@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from web3.exceptions import ContractLogicError
+from web3.types import EventData
 
 from tee_gemini.config import (
     GEMINI_API_KEY,
@@ -21,6 +22,41 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+async def process_logs(
+    logs: list[EventData],
+    event_name: str,
+    gemini_api: GeminiAPI,
+    gemini_endpoint: GeminiEndpoint,
+    tpm_interface: TPMInterface,
+) -> None:
+    """Process event logs based on the event name."""
+    for log in logs:
+        if event_name == "RequestSubmitted":
+            if not {"uid", "sender", "data"} <= log["args"].keys():
+                logger.warning("%s log does not contain valid args", event_name)
+                continue
+            uid, data = log["args"]["uid"], log["args"]["data"]
+            logger.info("New %s request uid=%d, data=%s", event_name, uid, data)
+            try:
+                response = await gemini_api.make_query(uid=uid, data=data)
+                logger.info(response)
+                await gemini_endpoint.fulfill_gemini_request(response)
+            except ContractLogicError:
+                logger.exception("Error fulfilling %s request", event_name)
+        elif event_name == "OIDCRequestSubmitted":
+            if not {"uid", "sender"} <= log["args"].keys():
+                logger.warning("%s log does not contain valid args", event_name)
+                continue
+            uid = log["args"]["uid"]
+            logger.info("New %s request uid=%d", event_name, uid)
+            try:
+                response = await tpm_interface.query_oidc_token(uid=uid)
+                logger.info(response)
+                await gemini_endpoint.fulfill_oidc_request(response)
+            except ContractLogicError:
+                logger.exception("Error fulfilling %s request", event_name)
+
+
 async def fetch_and_process_events(
     gemini_api: GeminiAPI,
     gemini_endpoint: GeminiEndpoint,
@@ -37,48 +73,28 @@ async def fetch_and_process_events(
             latest_block_num,
             new_block_num - 1,
         )
-        gemini_request_submitted_logs = await gemini_endpoint.get_event_logs(
-            from_block=latest_block_num,
-            to_block=new_block_num - 1,
-            event_name="RequestSubmitted",
-        )
-        oidc_request_submitted_logs = await gemini_endpoint.get_event_logs(
-            from_block=latest_block_num,
-            to_block=new_block_num - 1,
-            event_name="OIDCRequestSubmitted",
-        )
-        if gemini_request_submitted_logs:
-            logger.debug("Found `RequestSubmitted` in logs, querying Gemini API")
-            for log in gemini_request_submitted_logs:
-                if not {"uid", "sender", "data"} <= log["args"].keys():
-                    logger.warning("Event log does not contain valid args")
-                    continue
-                uid, data = log["args"]["uid"], log["args"]["data"]
-                logger.info("New `RequestSubmitted` request uid=%d, data=%s", uid, data)
-                response = gemini_api.make_query(uid=uid, data=data)
-                logger.info(response)
-                try:
-                    await gemini_endpoint.fulfill_gemini_request(response)
-                except ContractLogicError:
-                    logger.exception("Error responding to query")
-                    continue
-        if oidc_request_submitted_logs:
-            logger.debug("Found `OIDCRequestSubmitted` in logs, querying Gemini API")
-            for log in oidc_request_submitted_logs:
-                if not {"uid", "sender"} <= log["args"].keys():
-                    logger.warning("Event log does not contain valid args")
-                    continue
-                uid = log["args"]["uid"]
-                logger.info("New `OIDCRequestSubmitted` request uid=%d", uid)
-                response = await tpm_interface.query_oidc_token(uid=uid)
-                logger.info(response)
-                try:
-                    await gemini_endpoint.fulfill_oidc_request(response)
-                except ContractLogicError:
-                    logger.exception("Error responding to query")
-                    continue
-        else:
-            logger.debug("No `MessageRequested` logs found")
+
+        # Fetch event logs
+        event_logs = {
+            "RequestSubmitted": await gemini_endpoint.get_event_logs(
+                from_block=latest_block_num,
+                to_block=new_block_num - 1,
+                event_name="RequestSubmitted",
+            ),
+            "OIDCRequestSubmitted": await gemini_endpoint.get_event_logs(
+                from_block=latest_block_num,
+                to_block=new_block_num - 1,
+                event_name="OIDCRequestSubmitted",
+            ),
+        }
+
+        # Process logs
+        for event_name, logs in event_logs.items():
+            if logs:
+                logger.debug("Found `%s` in logs, processing...", event_name)
+                await process_logs(
+                    logs, event_name, gemini_api, gemini_endpoint, tpm_interface
+                )
 
         return new_block_num
 
@@ -86,6 +102,7 @@ async def fetch_and_process_events(
 
 
 async def async_loop() -> None:
+    """Main event loop."""
     # Connect to Gemini Endpoint contract
     gemini_endpoint = GeminiEndpoint(
         RPC_URL,
@@ -109,6 +126,8 @@ async def async_loop() -> None:
 
     logger.info("Waiting for events on %s...", gemini_endpoint.contract.address)
     latest_block_num = await gemini_endpoint.get_latest_block_number()
+
+    # Main loop
     while True:
         try:
             latest_block_num = await fetch_and_process_events(
