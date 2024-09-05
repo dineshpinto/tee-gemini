@@ -6,39 +6,40 @@ contract Interactor {
     struct OIDCRequest {
         address sender;
         uint256 uid;
-        string data;
+        string token;
     }
 
-    struct Request {
+    struct PromptRequest {
         address sender;
         uint256 uid;
-        string data; // TODO: This should be bytes, but keep it as string for simplicity
+        string prompt; // TODO: This should be bytes, but keep it as string for simplicity
     }
 
-    struct Response {
+    struct PromptResponse {
         uint256 uid; // Response uid
-        string text;
+        string response;
         uint256 promptTokenCount;
         uint256 candidateTokenCount;
         uint256 totalTokenCount;
     }
 
     event OIDCRequestSubmitted(uint256 uid, address sender);
-    event OIDCRequestFullfilled(uint256 uid, string data);
+    event OIDCRequestFullfilled(uint256 uid, string token);
 
-    event RequestSubmitted(uint256 uid, address sender, string data);
-    event RequestFullfilled(
+    event PromptRequestSubmitted(uint256 uid, address sender, string prompt);
+    event PromptRequestFullfilled(
         uint256 uid,
-        string text,
+        string response,
         uint256 promptTokenCount,
         uint256 candidateTokenCount,
         uint256 totalTokenCount
     );
 
-    Request[] public requests;
+    PromptRequest[] public promptRequests;
     OIDCRequest[] public oidcRequests;
-    mapping(uint256 => Response) public responses;
+    mapping(uint256 => PromptResponse) public promptResponses;
     bytes public ekPublicKey;
+    string public modelName;
 
     mapping(address => bool) public owners;
 
@@ -56,92 +57,113 @@ contract Interactor {
         owners[msg.sender] = true;
     }
 
-    function getEkAddress() external view returns (address) {
-        return address(bytes20(keccak256(abi.encode(ekPublicKey))));
-    }
-
+    // Sets the EK public key
     function setEkPublicKey(bytes memory _ekPublicKey) external onlyOwner {
         ekPublicKey = _ekPublicKey;
     }
 
+    // Sets the Gemini model used
+    function setModelName(string memory _modelName) external onlyOwner {
+        modelName = _modelName;
+    }
+
+    // Submit an OIDC request
     function requestOIDCToken() external returns (uint256) {
         uint256 uid = oidcRequests.length + 1;
         OIDCRequest memory req = OIDCRequest({
             sender: msg.sender,
             uid: uid,
-            data: ""
+            token: ""
         });
         oidcRequests.push(req);
         emit OIDCRequestSubmitted(uid, msg.sender);
         return uid;
     }
 
-    function fulfillOIDCToken(uint256 _uid, string memory _data) external {
+    // Fulfill an OIDC request
+    function fulfillOIDCToken(
+        uint256 _uid,
+        string memory _token
+    ) external onlyOwner {
         // This would be limited to the address of eligible fulfillers
-
-        emit OIDCRequestFullfilled(_uid, _data);
+        emit OIDCRequestFullfilled(_uid, _token);
     }
 
-    function makeRequest(string memory _data) external {
-        uint256 uid = requests.length + 1;
-        Request memory req = Request({
+    // Submit a prompt request
+    function makePromptRequest(string memory _prompt) external {
+        uint256 uid = promptRequests.length + 1;
+        PromptRequest memory req = PromptRequest({
             sender: msg.sender,
             uid: uid,
-            data: _data
+            prompt: _prompt
         });
-        requests.push(req);
-        emit RequestSubmitted(uid, msg.sender, _data);
+        promptRequests.push(req);
+        emit PromptRequestSubmitted(uid, msg.sender, _prompt);
     }
 
-    function fulfillRequest(uint256 _uid, Response memory _response) external {
-        // This would be limited to the address of eligible fulfillers
+    // Fulfill a prompt request
+    function fulfillPromptRequest(
+        uint256 _uid,
+        PromptResponse memory _res
+    ) external onlyOwner {
+        require(promptResponses[_uid].uid == 0, "Response already exists");
+        promptResponses[_uid] = _res;
 
-        require(responses[_uid].uid == 0, "Response already exists");
-
-        responses[_uid] = _response;
-
-        emit RequestFullfilled(
+        emit PromptRequestFullfilled(
             _uid,
-            _response.text,
-            _response.promptTokenCount,
-            _response.candidateTokenCount,
-            _response.totalTokenCount
+            _res.response,
+            _res.promptTokenCount,
+            _res.candidateTokenCount,
+            _res.totalTokenCount
         );
     }
 
-    function getRequestsCount() external view returns (uint256) {
-        return requests.length;
+    // Getter for the number of prompt requests
+    function getPromptRequestsCount() external view returns (uint256) {
+        return promptRequests.length;
     }
 
-    function getRequests() external view returns (Request[] memory) {
-        Request[] memory result = new Request[](requests.length);
-        for (uint256 i = 0; i < requests.length; i++) {
-            result[i] = requests[i];
+    // Getter for prompt requests
+    function getPromptRequests()
+        external
+        view
+        returns (PromptRequest[] memory)
+    {
+        return promptRequests;
+    }
+
+    // Getter for all prompt responses
+    function getPromptResponses()
+        public
+        view
+        returns (PromptResponse[] memory)
+    {
+        PromptResponse[] memory result = new PromptResponse[](
+            promptRequests.length
+        );
+        for (uint256 i = 0; i < promptRequests.length; i++) {
+            result[i] = promptResponses[i];
         }
         return result;
     }
 
-    function getResponses() public view returns (Response[] memory) {
-        Response[] memory result = new Response[](requests.length);
-        for (uint256 i = 0; i < requests.length; i++) {
-            result[i] = responses[i];
-        }
-        return result;
-    }
-
-    function getLatestResponse() public view returns (Response memory) {
-        return responses[requests.length];
-    }
-
+    // Getter for the number of OIDC requests
     function getOIDCRequestsCount() external view returns (uint256) {
         return oidcRequests.length;
     }
 
+    // Getter for OIDC requests
     function getOIDCRequests() external view returns (OIDCRequest[] memory) {
-        OIDCRequest[] memory result = new OIDCRequest[](oidcRequests.length);
-        for (uint256 i = 0; i < oidcRequests.length; i++) {
-            result[i] = oidcRequests[i];
-        }
-        return result;
+        return oidcRequests;
+    }
+
+    // Retrieve the latest prompt response
+    function getLatestPromptResponse()
+        public
+        view
+        returns (PromptResponse memory)
+    {
+        require(promptRequests.length > 0, "No prompt requests available");
+        return promptResponses[promptRequests.length];
     }
 }
