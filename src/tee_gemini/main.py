@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import subprocess
 
 from web3.exceptions import ContractLogicError
 
@@ -15,6 +14,7 @@ from tee_gemini.config import (
 )
 from tee_gemini.gemini_api import GeminiAPI
 from tee_gemini.gemini_endpoint import GeminiEndpoint
+from tee_gemini.tpm_interface import TPMCommunicationError, TPMInterface
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 async def fetch_and_process_events(
     gemini_api: GeminiAPI,
     gemini_endpoint: GeminiEndpoint,
+    tpm_interface: TPMInterface,
     latest_block_num: int,
 ) -> int:
     """Poll event emitting contract and get latest feed values."""
@@ -31,28 +32,47 @@ async def fetch_and_process_events(
 
     if new_block_num > latest_block_num + 1:
         logger.info(
-            "Polling Gemini Endpoint for `RequestSubmitted` from %i to %i",
+            "Polling Gemini Endpoint for events from %i to %i",
             latest_block_num,
             new_block_num - 1,
         )
-        logs = await gemini_endpoint.get_event_logs(
+        feed_request_submitted_logs = await gemini_endpoint.get_event_logs(
             from_block=latest_block_num,
             to_block=new_block_num - 1,
             event_name="RequestSubmitted",
         )
-        if logs:
-            logger.debug("Found logs, querying Gemini API")
-
-            for log in logs:
+        oidc_request_submitted_logs = await gemini_endpoint.get_event_logs(
+            from_block=latest_block_num,
+            to_block=new_block_num - 1,
+            event_name="OIDCRequestSubmitted",
+        )
+        if feed_request_submitted_logs:
+            logger.debug("Found `RequestSubmitted` in logs, querying Gemini API")
+            for log in feed_request_submitted_logs:
                 if not {"uid", "sender", "data"} <= log["args"].keys():
                     logger.warning("Event log does not contain valid args")
                     continue
                 uid, data = log["args"]["uid"], log["args"]["data"]
-                logger.info("New request uid=%d, data=%s", uid, data)
+                logger.info("New `RequestSubmitted` request uid=%d, data=%s", uid, data)
                 response = gemini_api.make_query(uid=uid, data=data)
                 logger.info(response)
                 try:
-                    await gemini_endpoint.respond_to_query(response)
+                    await gemini_endpoint.fulfill_feed_request(response)
+                except ContractLogicError:
+                    logger.exception("Error responding to query")
+                    continue
+        if oidc_request_submitted_logs:
+            logger.debug("Found `OIDCRequestSubmitted` in logs, querying Gemini API")
+            for log in oidc_request_submitted_logs:
+                if not {"uid", "sender"} <= log["args"].keys():
+                    logger.warning("Event log does not contain valid args")
+                    continue
+                uid = log["args"]["uid"]
+                logger.info("New `OIDCRequestSubmitted` request uid=%d", uid)
+                response = await tpm_interface.query_oidc_token(uid=uid)
+                logger.info(response)
+                try:
+                    await gemini_endpoint.fulfill_oidc_request(response)
                 except ContractLogicError:
                     logger.exception("Error responding to query")
                     continue
@@ -82,12 +102,23 @@ async def async_loop() -> None:
     # Connect to Gemini API
     gemini_api = GeminiAPI(model="gemini-1.5-flash-001", api_key=GEMINI_API_KEY)
 
+    # Connect to /dev/tpm0
+    tpm_interface = TPMInterface()
+    logger.info("Querying pubkey from TPM...")
+    try:
+        ek_pubkey = await tpm_interface.query_ek_pubkey()
+        logger.info("EK pubkey is %s", ek_pubkey)
+        await gemini_endpoint.set_ek_pubkey(ek_pubkey)
+    except TPMCommunicationError:
+        logger.exception()
+        logger.exception("Unable to set EK pubkey")
+
     logger.info("Waiting for requests...")
     latest_block_num = await gemini_endpoint.get_latest_block_number()
     while True:
         try:
             latest_block_num = await fetch_and_process_events(
-                gemini_api, gemini_endpoint, latest_block_num
+                gemini_api, gemini_endpoint, tpm_interface, latest_block_num
             )
         except Exception:
             logger.exception("Error during event processing")
@@ -98,28 +129,6 @@ async def async_loop() -> None:
 
 
 def start() -> None:
-    logger.info("Checking for gotpm binary...")
-    try:
-        subprocess.run(
-            ["./gotpm --help"], capture_output=True, check=True, text=True, shell=True
-        )
-        logger.info("Successfully queried gotpm binary")
-    except subprocess.CalledProcessError:
-        logger.exception("Unable to query gotpm binary")
-
-    try:
-        endorsement_pubkey_output = subprocess.run(
-            ["./gotpm pubkey endorsement"],
-            capture_output=True,
-            check=True,
-            text=True,
-            shell=True,
-        )
-        logger.info("stdout %s", endorsement_pubkey_output.stdout)
-        logger.info("stderr %s", endorsement_pubkey_output.stderr)
-    except subprocess.CalledProcessError:
-        logger.exception("Unable to query TEE pubkey")
-
     try:
         asyncio.run(async_loop())
     except KeyboardInterrupt:
