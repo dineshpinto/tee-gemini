@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 
 from web3 import AsyncWeb3
-from web3.types import EventData
+from web3.types import EventData, TxParams
 
 from tee_gemini.rpc_api import RpcAPI
 
@@ -10,12 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class RequestResponse:
+class GeminiResponse:
     uid: int
     text: str
     prompt_token_count: int
     candidates_token_count: int
     total_token_count: int
+
+
+@dataclass
+class OIDCResponse:
+    uid: int
+    token: str
 
 
 class GeminiEndpoint(RpcAPI):
@@ -45,7 +51,15 @@ class GeminiEndpoint(RpcAPI):
             from_block=from_block, to_block=to_block
         )
 
-    async def respond_to_query(self, response: RequestResponse) -> None:
+    async def sign_and_send_transaction(self, tx: TxParams) -> None:
+        signed_tx = self.w3.eth.account.sign_transaction(
+            tx, private_key=self.tee_private_key
+        )
+        tx_hash = await self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        tx_receipt = await self.w3.eth.wait_for_transaction_receipt(tx_hash)
+        logger.debug("Tx Receipt: %s", tx_receipt)
+
+    async def fulfill_feed_request(self, response: GeminiResponse) -> None:
         tx = await self.gemini_endpoint.functions.fulfillRequest(
             response.uid,
             (
@@ -63,9 +77,31 @@ class GeminiEndpoint(RpcAPI):
                 "maxPriorityFeePerGas": await self.w3.eth.max_priority_fee,
             }
         )
-        signed_tx = self.w3.eth.account.sign_transaction(
-            tx, private_key=self.tee_private_key
+        await self.sign_and_send_transaction(tx)
+
+    async def fulfill_oidc_request(self, response: OIDCResponse) -> None:
+        tx = await self.gemini_endpoint.functions.fulfillOIDCToken(
+            response.uid,
+            response.token,
+        ).build_transaction(
+            {
+                "from": self.tee_address,
+                "nonce": await self.w3.eth.get_transaction_count(self.tee_address),
+                "maxFeePerGas": await self.w3.eth.gas_price,
+                "maxPriorityFeePerGas": await self.w3.eth.max_priority_fee,
+            }
         )
-        tx_hash = await self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        tx_receipt = await self.w3.eth.wait_for_transaction_receipt(tx_hash)
-        logger.debug("Tx Receipt: %s", tx_receipt)
+        await self.sign_and_send_transaction(tx)
+
+    async def set_ek_pubkey(self, pubkey: str) -> None:
+        tx = await self.gemini_endpoint.functions.setEkPublicKey(
+            pubkey,
+        ).build_transaction(
+            {
+                "from": self.tee_address,
+                "nonce": await self.w3.eth.get_transaction_count(self.tee_address),
+                "maxFeePerGas": await self.w3.eth.gas_price,
+                "maxPriorityFeePerGas": await self.w3.eth.max_priority_fee,
+            }
+        )
+        await self.sign_and_send_transaction(tx)
