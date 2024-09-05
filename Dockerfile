@@ -9,6 +9,5 @@ ADD . /tee-gemini
 # Sync the project into a new environment, using the frozen lockfile
 WORKDIR /tee-gemini
 RUN uv sync --frozen
-RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["uv", "run", "start-gemini"]
