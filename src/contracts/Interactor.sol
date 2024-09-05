@@ -91,6 +91,10 @@ contract Interactor {
 
     // Submit a prompt request
     function makePromptRequest(string memory _prompt) external {
+        require(
+            bytes(_prompt).length == 0,
+            "Request should have a non-zero length"
+        );
         uint256 uid = promptRequests.length + 1;
         PromptRequest memory req = PromptRequest({
             sender: msg.sender,
