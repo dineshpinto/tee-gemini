@@ -110,7 +110,6 @@ async def async_loop() -> None:
         logger.info("EK pubkey is %s", ek_pubkey)
         await gemini_endpoint.set_ek_pubkey(ek_pubkey)
     except TPMCommunicationError:
-        logger.exception()
         logger.exception("Unable to set EK pubkey")
 
     logger.info("Waiting for requests...")
