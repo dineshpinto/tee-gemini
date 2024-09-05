@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Import ownable from OpenZeppelin
-import "@openzeppelin/contracts/access/Ownable.sol";
 pragma solidity ^0.8.6;
 
-contract Interactor is Ownable {
+contract Interactor {
     struct OIDCRequest {
         address sender;
         uint256 uid;
@@ -39,17 +38,29 @@ contract Interactor is Ownable {
     Request[] public requests;
     OIDCRequest[] public oidcRequests;
     mapping(uint256 => Response) public responses;
-    bytes32 public ekPublicKey;
+    bytes public ekPublicKey;
 
-    constructor(bytes32 _ekPublicKey) Ownable() {
+    mapping(address => bool) public owners;
+
+    modifier onlyOwner() {
+        require(owners[msg.sender], "Only owner can call this function");
+        _;
+    }
+
+    function addOwner(address _owner) external onlyOwner {
+        owners[_owner] = true;
+    }
+
+    constructor(bytes memory _ekPublicKey) {
         ekPublicKey = _ekPublicKey;
+        owners[msg.sender] = true;
     }
 
     function getEkAddress() external view returns (address) {
         return address(bytes20(keccak256(abi.encode(ekPublicKey))));
     }
 
-    function setEkPublicKey(bytes32 _ekPublicKey) external onlyOwner {
+    function setEkPublicKey(bytes memory _ekPublicKey) external onlyOwner {
         ekPublicKey = _ekPublicKey;
     }
 
