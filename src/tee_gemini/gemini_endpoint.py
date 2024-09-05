@@ -59,7 +59,7 @@ class GeminiEndpoint(RpcAPI):
         tx_receipt = await self.w3.eth.wait_for_transaction_receipt(tx_hash)
         logger.debug("Tx Receipt: %s", tx_receipt)
 
-    async def fulfill_feed_request(self, response: GeminiResponse) -> None:
+    async def fulfill_gemini_request(self, response: GeminiResponse) -> None:
         tx = await self.gemini_endpoint.functions.fulfillRequest(
             response.uid,
             (
@@ -95,7 +95,7 @@ class GeminiEndpoint(RpcAPI):
 
     async def set_ek_pubkey(self, pubkey: str) -> None:
         tx = await self.gemini_endpoint.functions.setEkPublicKey(
-            pubkey,
+            pubkey.encode(),
         ).build_transaction(
             {
                 "from": self.tee_address,

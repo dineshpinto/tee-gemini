@@ -27,7 +27,7 @@ async def fetch_and_process_events(
     tpm_interface: TPMInterface,
     latest_block_num: int,
 ) -> int:
-    """Poll event emitting contract and get latest feed values."""
+    """Poll event emitting contract."""
     new_block_num = await gemini_endpoint.get_latest_block_number()
 
     if new_block_num > latest_block_num + 1:
@@ -36,7 +36,7 @@ async def fetch_and_process_events(
             latest_block_num,
             new_block_num - 1,
         )
-        feed_request_submitted_logs = await gemini_endpoint.get_event_logs(
+        gemini_request_submitted_logs = await gemini_endpoint.get_event_logs(
             from_block=latest_block_num,
             to_block=new_block_num - 1,
             event_name="RequestSubmitted",
@@ -46,9 +46,9 @@ async def fetch_and_process_events(
             to_block=new_block_num - 1,
             event_name="OIDCRequestSubmitted",
         )
-        if feed_request_submitted_logs:
+        if gemini_request_submitted_logs:
             logger.debug("Found `RequestSubmitted` in logs, querying Gemini API")
-            for log in feed_request_submitted_logs:
+            for log in gemini_request_submitted_logs:
                 if not {"uid", "sender", "data"} <= log["args"].keys():
                     logger.warning("Event log does not contain valid args")
                     continue
@@ -57,7 +57,7 @@ async def fetch_and_process_events(
                 response = gemini_api.make_query(uid=uid, data=data)
                 logger.info(response)
                 try:
-                    await gemini_endpoint.fulfill_feed_request(response)
+                    await gemini_endpoint.fulfill_gemini_request(response)
                 except ContractLogicError:
                     logger.exception("Error responding to query")
                     continue
