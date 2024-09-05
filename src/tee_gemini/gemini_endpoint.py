@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 
 from web3 import AsyncWeb3
-from web3.types import EventData, TxParams
+from web3.types import EventData, TxParams, TxReceipt
 
 from tee_gemini.rpc_api import RpcAPI
 
@@ -38,7 +38,7 @@ class GeminiEndpoint(RpcAPI):
         super().__init__(rpc_url)
         self.tee_address = self.w3.to_checksum_address(tee_address)
         self.tee_private_key = tee_private_key
-        self.gemini_endpoint = self.w3.eth.contract(
+        self.contract = self.w3.eth.contract(
             address=AsyncWeb3.to_checksum_address(contract_address),
             abi=contract_abi,
         )
@@ -47,20 +47,21 @@ class GeminiEndpoint(RpcAPI):
         self, from_block: int, to_block: int, event_name: str
     ) -> list[EventData]:
         """Get contract event logs."""
-        return await self.gemini_endpoint.events[event_name]().get_logs(  # pyright: ignore [reportAttributeAccessIssue]
+        return await self.contract.events[event_name]().get_logs(  # pyright: ignore [reportAttributeAccessIssue]
             from_block=from_block, to_block=to_block
         )
 
-    async def sign_and_send_transaction(self, tx: TxParams) -> None:
+    async def sign_and_send_transaction(self, tx: TxParams) -> TxReceipt:
         signed_tx = self.w3.eth.account.sign_transaction(
             tx, private_key=self.tee_private_key
         )
         tx_hash = await self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
         tx_receipt = await self.w3.eth.wait_for_transaction_receipt(tx_hash)
         logger.debug("Tx Receipt: %s", tx_receipt)
+        return tx_receipt
 
     async def fulfill_gemini_request(self, response: GeminiResponse) -> None:
-        tx = await self.gemini_endpoint.functions.fulfillRequest(
+        tx = await self.contract.functions.fulfillRequest(
             response.uid,
             (
                 response.uid,
@@ -80,7 +81,7 @@ class GeminiEndpoint(RpcAPI):
         await self.sign_and_send_transaction(tx)
 
     async def fulfill_oidc_request(self, response: OIDCResponse) -> None:
-        tx = await self.gemini_endpoint.functions.fulfillOIDCToken(
+        tx = await self.contract.functions.fulfillOIDCToken(
             response.uid,
             response.token,
         ).build_transaction(
@@ -94,7 +95,7 @@ class GeminiEndpoint(RpcAPI):
         await self.sign_and_send_transaction(tx)
 
     async def set_ek_pubkey(self, pubkey: str) -> None:
-        tx = await self.gemini_endpoint.functions.setEkPublicKey(
+        tx = await self.contract.functions.setEkPublicKey(
             pubkey.encode(),
         ).build_transaction(
             {
@@ -105,3 +106,4 @@ class GeminiEndpoint(RpcAPI):
             }
         )
         await self.sign_and_send_transaction(tx)
+        logger.info("Set EK pubkey on %s", self.contract.address)

@@ -32,7 +32,8 @@ async def fetch_and_process_events(
 
     if new_block_num > latest_block_num + 1:
         logger.info(
-            "Polling Gemini Endpoint for events from %i to %i",
+            "Polling %s for events from %i to %i",
+            gemini_endpoint.contract.address,
             latest_block_num,
             new_block_num - 1,
         )
@@ -84,10 +85,6 @@ async def fetch_and_process_events(
     return latest_block_num
 
 
-async def query_gemini_api() -> None:
-    pass
-
-
 async def async_loop() -> None:
     # Connect to Gemini Endpoint contract
     gemini_endpoint = GeminiEndpoint(
@@ -104,15 +101,13 @@ async def async_loop() -> None:
 
     # Connect to /dev/tpm0
     tpm_interface = TPMInterface()
-    logger.info("Querying pubkey from TPM...")
     try:
         ek_pubkey = await tpm_interface.query_ek_pubkey()
-        logger.info("EK pubkey is %s", ek_pubkey)
         await gemini_endpoint.set_ek_pubkey(ek_pubkey)
     except TPMCommunicationError:
         logger.exception("Unable to set EK pubkey")
 
-    logger.info("Waiting for requests...")
+    logger.info("Waiting for events on %s...", gemini_endpoint.contract.address)
     latest_block_num = await gemini_endpoint.get_latest_block_number()
     while True:
         try:

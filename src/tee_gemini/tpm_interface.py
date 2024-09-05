@@ -30,9 +30,11 @@ class TPMInterface:
 
     async def query_ek_pubkey(self) -> str:
         pubkey = await self._communicate("pubkey endorsement")
-        return pubkey.replace("-----BEGIN PUBLIC KEY-----", "").replace(
+        pubkey = pubkey.replace("-----BEGIN PUBLIC KEY-----", "").replace(
             "-----END PUBLIC KEY-----", ""
         )
+        logger.info("EK pubkey is %s", pubkey)
+        return pubkey
 
     async def query_oidc_token(self, uid: int) -> OIDCResponse:
         res = await self._communicate("token")
