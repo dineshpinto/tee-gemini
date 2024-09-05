@@ -13,11 +13,14 @@ RUN apt-get update && apt-get install -y \
     && rm /tmp/go-tpm-tools.tar.gz \
     && apt-get autoremove -y
 
-# Copy the project into the image
-ADD . /tee-gemini
-
-# Sync the project into a new environment, using the frozen lockfile
+# Set the working directory
 WORKDIR /tee-gemini
+
+# Copy the project into the image
+COPY . /tee-gemini
+
+# Sync the project into a new environment using the frozen lockfile
 RUN uv sync --frozen
 
+# Define the entrypoint
 ENTRYPOINT ["uv", "run", "start-gemini"]
