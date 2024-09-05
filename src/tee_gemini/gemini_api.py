@@ -2,7 +2,7 @@ import logging
 
 import google.generativeai as genai
 
-from tee_gemini.gemini_endpoint import RequestResponse
+from tee_gemini.gemini_endpoint import GeminiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +13,9 @@ class GeminiAPI:
         self.model = genai.GenerativeModel(model)
         logger.info("Successfully connected to Gemini API with model `%s`", model)
 
-    def make_query(self, uid: int, data: str) -> RequestResponse:
+    def make_query(self, uid: int, data: str) -> GeminiResponse:
         res = self.model.generate_content(data)
-        return RequestResponse(
+        return GeminiResponse(
             uid=uid,
             text=res.text,
             prompt_token_count=res.usage_metadata.prompt_token_count,
