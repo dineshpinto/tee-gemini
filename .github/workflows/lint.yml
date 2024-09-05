@@ -19,7 +19,7 @@ jobs:
         run: uv sync --frozen --all-extras
       - name: Format with ruff
         run: uv run ruff format --diff
-      - name: Lint with riff
+      - name: Lint with ruff
         run: uv run ruff check --diff
       - name: Type check with pyright
         run: uv run pyright
