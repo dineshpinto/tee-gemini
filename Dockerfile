@@ -1,8 +1,5 @@
 FROM python:3.12-slim-bookworm
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:0.3.5 /uv /bin/uv
-
 # Download the go-tpm-tools binary
 RUN apt-get update && apt-get install -y \
     curl \
@@ -16,11 +13,5 @@ RUN apt-get update && apt-get install -y \
 # Set the working directory
 WORKDIR /tee-gemini
 
-# Copy the project into the image
-COPY . /tee-gemini
-
-# Sync the project into a new environment using the frozen lockfile
-RUN uv sync --frozen
-
 # Define the entrypoint
-ENTRYPOINT ["uv", "run", "start-gemini"]
+ENTRYPOINT ["./entrypoint.sh"]
