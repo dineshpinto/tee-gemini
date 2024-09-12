@@ -1,3 +1,4 @@
-./gotpm --help
-./gotpm pubkey endorsement
-./gotpm token
+#!bin/bash
+/usr/local/bin/gotpm --help
+/usr/local/bin/gotpm pubkey endorsement
+/usr/local/bin/gotpm token

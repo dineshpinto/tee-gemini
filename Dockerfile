@@ -10,12 +10,9 @@ RUN apt-get update && apt-get install -y \
     && rm /tmp/go-tpm-tools.tar.gz \
     && apt-get autoremove -y
 
-# Set the working directory
-WORKDIR /tee-gemini
+COPY entrypoint.sh /
 
-COPY entrypoint.sh /tee-gemini
-
-RUN chmod +x entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Define the entrypoint
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
