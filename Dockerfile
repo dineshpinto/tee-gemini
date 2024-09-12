@@ -13,5 +13,9 @@ RUN apt-get update && apt-get install -y \
 # Set the working directory
 WORKDIR /tee-gemini
 
+COPY entrypoint.sh /tee-gemini
+
+RUN chmod +x entrypoint.sh
+
 # Define the entrypoint
 ENTRYPOINT ["./entrypoint.sh"]
