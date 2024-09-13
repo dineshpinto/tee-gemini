@@ -1,5 +1,8 @@
 FROM python:3.12-slim-bookworm
 
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:0.3.5 /uv /bin/uv
+
 # Download the go-tpm-tools binary
 RUN apt-get update && apt-get install -y \
     curl \
