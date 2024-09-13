@@ -22,8 +22,5 @@ COPY . /tee-gemini
 # Sync the project into a new environment using the frozen lockfile
 RUN uv sync --frozen
 
-# Make the entrypoint executable
-RUN chmod +x ./entrypoint.sh
-
 # Define the entrypoint
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["uv", "run", "start-gemini"]
