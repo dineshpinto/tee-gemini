@@ -131,7 +131,7 @@ async def async_loop() -> None:
         except ContractLogicError:
             logger.exception("Unable to set EK pubkey on contract")
 
-    account = Account.from_key(tpm_interface.get_random_hex_bytes(32))
+    account = Account.from_key(await tpm_interface.get_random_hex_bytes(32))
     logger.info("Address: %s", account.address)
     logger.info("Private Key: %s", account.key.hex())
 
