@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_valid(claims: dict) -> bool:
+    """Check the validity of the claims."""
     subject = claims.get("sub")
     if not subject:
         msg = "Missing 'sub' claim"
