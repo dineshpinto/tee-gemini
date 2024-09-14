@@ -23,7 +23,7 @@ def parse_verify_args() -> VerifyArgs:
         "--token",
         type=str,
         required=True,
-        help="oidc token",
+        help="OIDC token",
     )
     parser.add_argument(
         "--expected-issuer",

@@ -11,7 +11,31 @@ docker run --name tee-gemini tee-gemini
 ### Using gcloud CLI
 
 ```bash
-gcloud compute instances create tee-gemini --zone=us-central1-a --machine-type=c2d-standard-2 --scopes=cloud-platform --image=cos-113-18244-151-27 --image-project=ghcr.io/dineshpinto/tee-gemini:main --shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring
+gcloud compute instances create-with-container tee-gemini-testing \
+    --project=flare-network-sandbox \
+    --zone=us-central1-a \
+    --machine-type=c2d-standard-2 \
+    --network-interface=network-tier=PREMIUM,nic-type=GVNIC,stack-type=IPV4_ONLY,subnet=default \
+    --maintenance-policy=TERMINATE \
+    --provisioning-model=STANDARD \
+    --service-account=83674517876-compute@developer.gserviceaccount.com \
+    --scopes=https://www.googleapis.com/auth/cloud-platform \
+    --tags=https-server \
+    --confidential-compute \
+    --image=projects/cos-cloud/global/images/cos-stable-113-18244-151-50 \
+    --boot-disk-size=10GB \
+    --boot-disk-type=pd-standard \
+    --boot-disk-device-name=tee-gemini-testing \
+    --container-image=docker\ \
+pull\ ghcr.io/dineshpinto/tee-gemini:main \
+    --container-restart-policy=always \
+    --container-privileged \
+    --container-env=GEMINI_ENDPOINT_ADDRESS=,RPC_URL=,SECONDS_BW_ITERATIONS=,TEE_ADDRESS=,TEE_PRIVATE_KEY=,GEMINI_API_KEY= \
+    --shielded-secure-boot \
+    --shielded-vtpm \
+    --shielded-integrity-monitoring \
+    --labels=goog-ec-src=vm_add-gcloud,container-vm=cos-stable-113-18244-151-50 \
+    --confidential-compute
 ```
 
 ### Using Console
