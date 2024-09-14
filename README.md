@@ -30,19 +30,23 @@ gcloud compute instances create tee-gemini --zone=us-central1-a --machine-type=c
 
 3. Click on Create
 
-## Onchain Interactions
-
-### Query Gemini API
+## Query Gemini API onchain
 
 1. Call `makeRequest` with `_data` as the query to Gemini.
 
 2. Query `getLatestResponse` which returns a `struct Response` with the Gemini response text and metadata.
 
-### Query attestation token
+## Query and verify attestation token
 
 1. Call `requestOIDCToken`.
 
-2. See `data` parameter of `OIDCRequestFullfilled` event raised in `fulfillOIDCToken` (callback) transaction. Copy the token into a decoder like [jwt.io](https://jwt.io/) to decode it.
+2. See `data` parameter of `OIDCRequestFullfilled` event raised in `fulfillOIDCToken` (callback) transaction.
+
+3. Use the output of the `data` parameter from the last step.
+
+   ```bash
+   uv run verify-token --token <TOKEN>
+   ```
 
 ## Build
 
@@ -61,7 +65,7 @@ Build container
 docker build -t tee-gemini .
 ```
 
-Run locally development server
+Run local development server
 
 ```bash
 uv run start-gemini

@@ -9,6 +9,8 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "google-cloud-aiplatform>=1.64.0",
     "google-generativeai>=0.7.2",
+    "pyjwt>=2.9.0",
+    "cryptography>=43.0.1",
 ]
 
 [build-system]
@@ -33,6 +35,7 @@ docstring-code-format = true
 
 [project.scripts]
 start-gemini = "tee_gemini.main:start"
+verify-token = "verification.main:start"
 
 [tool.pyright]
 include=["src/"]
