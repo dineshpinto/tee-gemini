@@ -10,6 +10,8 @@ docker run --name tee-gemini tee-gemini
 
 ### Using gcloud CLI
 
+Set all environment variables defined in `.env.example`.
+
 ```bash
 gcloud compute instances create-with-container tee-gemini-testing \
     --project=flare-network-sandbox \
@@ -43,14 +45,21 @@ pull\ ghcr.io/dineshpinto/tee-gemini:main \
 1. Create a [Compute VM](https://console.cloud.google.com/compute/instancesAdd)
 2. Set the following parameters (any parameters not mentioned should be left default):
 
-   - Name: `tee-gemini`
-   - Machine Configuration -> Compute Optimized: C2D
-   - Confidential VM Service: Enable
-   - Deploy Container -> Container Image: `ghcr.io/dineshpinto/tee-gemini:main`
-   - Run as privileged: Check
-   - Environment Variables -> All environment variables defined in `.env.example`
-   - Boot Disk -> Change -> Confidential Images: Container-Optimized-OS 113-18224.151.27 LTS
-   - Advanced Options -> Security -> Shielded VM: Check Turn on Secure Boot
+   - VM basics: Name: `tee-gemini`
+   - Machine configuration -> Compute Optimized: C2D
+   - Security:
+      - Identity and API access:
+         - Access scopes: Allow full access to all Cloud APIs
+      - Confidential VM Service: Enable
+      - Shielded VM: 
+         - Turn on Secure Boot: Check
+   - OS and Storage:
+      - Change:
+         - Confidential images: Container-Optimized-OS 113-18224.151.50 LTS
+      - Container
+         - Container image: `ghcr.io/dineshpinto/tee-gemini:main`
+         - Run as privileged: Check
+         - Environment variables: All environment variables defined in `.env.example`
 
 3. Click on Create
 
