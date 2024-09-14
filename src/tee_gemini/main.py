@@ -118,11 +118,17 @@ async def async_loop() -> None:
 
     # Connect to /dev/tpm0
     tpm_interface = TPMInterface()
+    ek_pubkey = None
     try:
         ek_pubkey = await tpm_interface.query_ek_pubkey()
-        await gemini_endpoint.set_ek_pubkey(ek_pubkey)
     except TPMCommunicationError:
-        logger.exception("Unable to set EK pubkey")
+        logger.exception("Unable to query EK pubkey from TPM")
+
+    if ek_pubkey:
+        try:
+            await gemini_endpoint.set_ek_pubkey(ek_pubkey)
+        except ContractLogicError:
+            logger.exception("Unable to set EK pubkey on contract")
 
     logger.info("Waiting for events on %s...", gemini_endpoint.contract.address)
     latest_block_num = await gemini_endpoint.get_latest_block_number()
