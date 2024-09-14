@@ -75,10 +75,10 @@ pull\ ghcr.io/dineshpinto/tee-gemini:main \
 
 2. See `data` parameter of `OIDCRequestFullfilled` event raised in `fulfillOIDCToken` (callback) transaction.
 
-3. Use the output of the `data` parameter from the last step.
+3. Copy the `data` output to a file named `token.txt`, verify the token with:
 
    ```bash
-   uv run verify-token --token <TOKEN>
+   uv run verify-token --token $(cat token.txt)
    ```
 
 ## Build
