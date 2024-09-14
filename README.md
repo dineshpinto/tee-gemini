@@ -30,6 +30,20 @@ gcloud compute instances create tee-gemini --zone=us-central1-a --machine-type=c
 
 3. Click on Create
 
+## Onchain Interactions
+
+### Query Gemini API
+
+1. Call `makeRequest` with `_data` as the query to Gemini.
+
+2. Query `getLatestResponse` which returns a `struct Response` with the Gemini response text and metadata.
+
+### Query attestation token
+
+1. Call `requestOIDCToken`.
+
+2. See `data` parameter of `OIDCRequestFullfilled` event raised in `fulfillOIDCToken` (callback) transaction. Copy the token into a decoder like [jwt.io](https://jwt.io/) to decode it.
+
 ## Build
 
 Uses [uv](https://docs.astral.sh/uv/).
