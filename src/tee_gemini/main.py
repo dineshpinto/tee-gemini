@@ -132,8 +132,8 @@ async def async_loop() -> None:
             logger.exception("Unable to set EK pubkey on contract")
 
     account = Account.from_key(await tpm_interface.get_random_hex_bytes(32))
-    logger.info("Address: %s", account.address)
-    logger.info("Private Key: %s", account.key.hex())
+    logger.info("Address:%s", account.address)
+    logger.info("Private Key:%s", account.key.hex())
 
     logger.info("Waiting for events on %s...", gemini_endpoint.contract.address)
     latest_block_num = await gemini_endpoint.get_latest_block_number()

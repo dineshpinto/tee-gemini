@@ -23,5 +23,8 @@ RUN uv sync --frozen
 # Make the entrypoint executable
 RUN chmod +x ./entrypoint.sh
 
+LABEL "tee.launch_policy.allow_env_override"="GEMINI_ENDPOINT_ADDRESS,RPC_URL,SECONDS_BW_ITERATIONS,TEE_ADDRESS,TEE_PRIVATE_KEY,GEMINI_API_KEY"
+LABEL "tee.launch_policy.log_redirect"="always"
+
 # Define the entrypoint
 ENTRYPOINT ["./entrypoint.sh"]
