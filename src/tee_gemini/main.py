@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from eth_account import Account
 from web3.exceptions import ContractLogicError
 from web3.types import EventData
 
@@ -129,6 +130,10 @@ async def async_loop() -> None:
             await gemini_endpoint.set_ek_pubkey(ek_pubkey)
         except ContractLogicError:
             logger.exception("Unable to set EK pubkey on contract")
+
+    account = Account.from_key(tpm_interface.get_random_hex_bytes(32))
+    logger.info("Address: %s", account.address)
+    logger.info("Private Key: %s", account.key.hex())
 
     logger.info("Waiting for events on %s...", gemini_endpoint.contract.address)
     latest_block_num = await gemini_endpoint.get_latest_block_number()
