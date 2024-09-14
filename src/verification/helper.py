@@ -1,5 +1,6 @@
 import argparse
 import base64
+import logging
 from dataclasses import dataclass
 
 import jwt
@@ -8,12 +9,15 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class VerifyArgs:
     token: str
     expected_issuer: str
     well_known_path: str
+    verbose: bool
 
 
 def parse_verify_args() -> VerifyArgs:
@@ -36,6 +40,12 @@ def parse_verify_args() -> VerifyArgs:
         type=str,
         default="/.well-known/openid-configuration",
         help="well known path (default: /.well-known/openid-configuration)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="increase output verbosity",
+        action="store_true",
     )
     return VerifyArgs(**vars(parser.parse_args()))
 
@@ -76,11 +86,13 @@ def decode_and_validate_token(
 
     jwks = fetch_jwks(jwks_uri)
     unverified_header = jwt.get_unverified_header(token)
+    logger.info("Token Header: %s", unverified_header)
     rsa_key = None
 
     # Find the correct key based on the key ID (kid)
     for key in jwks["keys"]:
         if key["kid"] == unverified_header["kid"]:
+            logger.info("Found matching kid: %s", key["kid"])
             rsa_key = jwk_to_rsa_key(key)
             break
 

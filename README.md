@@ -81,6 +81,8 @@ pull\ ghcr.io/dineshpinto/tee-gemini:main \
    uv run verify-token --token $(cat token.txt)
    ```
 
+If the command runs without any failures, the token signature and payload was successfully verified against issuer. Add the `--verbose` flag to see more details.
+
 ## Build
 
 Uses [uv](https://docs.astral.sh/uv/).
