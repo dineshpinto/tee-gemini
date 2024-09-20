@@ -1,5 +1,7 @@
 # TEE Gemini Reference Implementation
 
+**THIS REPO IS A WIP. DO NOT USE THIS FOR ANYTHING OTHER THAN TESTING.**
+
 ## Run Locally
 
 ```bash
@@ -8,7 +10,7 @@ docker run --name tee-gemini tee-gemini
 
 ## Run on GCP
 
-### Using gcloud CLI
+### Using gcloud CLI (COS)
 
 Set all environment variables defined in `.env.example`.
 
@@ -37,6 +39,35 @@ pull\ ghcr.io/dineshpinto/tee-gemini:main \
     --shielded-vtpm \
     --shielded-integrity-monitoring \
     --labels=goog-ec-src=vm_add-gcloud,container-vm=cos-stable-113-18244-151-50 \
+    --confidential-compute
+```
+
+### Using gcloud CLI (Confidential Space)
+
+```bash
+gcloud compute instances create-with-container tee-gemini-confidential \
+    --project=flare-network-sandbox \
+    --zone=us-central1-a \
+    --machine-type=c2d-standard-2 \
+    --network-interface=network-tier=PREMIUM,nic-type=GVNIC,stack-type=IPV4_ONLY,subnet=default \
+    --maintenance-policy=TERMINATE \
+    --provisioning-model=STANDARD \
+    --service-account=83674517876-compute@developer.gserviceaccount.com \
+    --scopes=https://www.googleapis.com/auth/cloud-platform \
+    --tags=https-server \
+    --confidential-compute \
+    --image=projects/confidential-space-images/global/images/confidential-space-debug-240800 \
+    --boot-disk-size=11GB \
+    --boot-disk-type=pd-standard \
+    --boot-disk-device-name=tee-gemini-confidential \
+    --container-image=ghcr.io/dineshpinto/tee-gemini:main \
+    --container-restart-policy=always \
+    --container-privileged \
+    --container-env=GEMINI_ENDPOINT_ADDRESS=,RPC_URL=,SECONDS_BW_ITERATIONS=,TEE_PRIVATE_KEY=,GEMINI_API_KEY= \
+    --shielded-secure-boot \
+    --shielded-vtpm \
+    --shielded-integrity-monitoring \
+    --labels=goog-ec-src=vm_add-gcloud,container-vm=confidential-space-debug-240800 \
     --confidential-compute
 ```
 
